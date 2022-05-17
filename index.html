@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="./index.css">
+		
+		<meta http-equiv="pragma" content="no-cache" />
+		<meta http-equiv="Cache-control" content="no-cache">
+		
+		<style>
+			.unit-row-cls{
+				display:block;
+				height:30px;
+				background:#EFEFEF;
+				width:210px;
+				margin-top:5px;
+				padding-top:5px;
+				padding-left:10px;
+				cursor:pointer;
+			}
+			
+			.loader{
+				width:100vw;
+				height:100vh;
+				background:rgba(0,0,0,.05);
+				z-index:10;
+				position:absolute;
+				display:flex;
+				justify-content:center;
+				align-items:center;
+			}
+		</style>
+		
+    </head>
+
+    <body onload="initilize()">
+		<div class="main-container">
+			<div class="loader">
+				<div class="cell">
+					<div class="pl pl-puzzle"></div>
+					<div class="pl-name">uploading files</div>
+				</div>
+			</div>
+			
+			<div class="header">
+				<div class="search-bar">
+					<div style="border: 1px solid black; padding-left:5px;">
+						<i class="fa fa-search"></i>
+						<input id="search-txt" type="text" class="search-txt">
+					</div>
+					<div id="search-unit" class="btn-go">Go</div>
+					<div id="search-all" class="btn-aunits">All Units</div>
+				</div>
+
+				<div id="btnUpload" style="cursor:pointer;">
+					<div class="upload-btn">
+						<i class="fa fa-upload"></i>
+						upload
+					</div>
+				</div>
+				
+			</div>
+			
+			<div class="container">
+				<iframe id="frame-holder" width="100%" ></iframe>
+				
+				<div id="all-unit-holder">
+					<div id="btn-close">
+						<i class="fa fa-close"></i>
+					</div>
+					
+					<div class="all-units">
+						<div class="list-header">
+							<label>Units found:</label>
+						</div>
+						<div id="unit-list"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	
+		<div id="popup">
+			<div class="pop-up">
+				<div id="btnClosePp" style="width:50px; height:50px; margin-left:755px; margin-top:-15px; position:absolute; cursor:pointer; z-index:100">
+					<i class="fa fa-close"></i>
+				</div>
+
+				<div style="display:flex; flex-direction:row; justify-content:space-around">
+					<div style="width:460px;">
+						<label class='title'>Naming convention for uploading zip file</label>
+						<ul>
+							<list class='lbl'>- Name of the zip should be the unit's name with year and quarter. ex : "mazdacx9_2022_q1"</list>
+							<list class='lbl'>- Zip file name should not start with special character</list>
+							<list class='lbl'>- Zip file should contain all folders(name should be product name) user want to showcase in storyboard and the unit logo. <a href="https://snipboard.io/jDN6SX.jpg"> ref</a></list>
+							<list class='lbl'>- All folder inside zip file should contain all sizes(except for mobile/display expandable and instram) user want to show in the story board tool.<a href="https://snipboard.io/g3EZM9.jpg"> ref</a></list>
+							<list class='lbl'>- Name of the images inside folder should be like tab_1_1 for first image of tab one  tab_2_2 for second images of tab two and so on. <a href="https://snipboard.io/HtUurq.jpg"> ref</a></list>
+							<list class='lbl'>- Only one video is allowed in the tool and its name should be video1.mp4. <a href="https://snipboard.io/HtUurq.jpg"> ref</a></list>
+						</ul>
+					</div>
+					<div class='vr'></div>
+					<div style="display:flex; justify-content:center; align-items:center;">
+						<div class="upload-btn">
+							<i class="fa fa-upload"></i>
+							Upload Zip
+						</div>
+						<input id="upload-btn" type="file" placeholder="File" style="width:110px; position: absolute; margin-top: -10px; margin-left: -10px; opacity: 0;">
+					</div>
+				</div>
+			</div>
+		</div>
+
+		
+<div id="popupsuccess">
+			<div class="pop-up-success">
+			<div id="btnClosesuccess" >
+					<i class="fa fa-close"></i>
+				</div>				
+				<div style="display:flex; flex-direction:row; justify-content:space-around">
+					<div style="width:250px;">
+						<h2 class='alertmsg'>File uploaded successfully !</h2>
+					</div>
+								
+				</div>
+			</div>
+		</div>
+
+
+		
+        <!--<div class="footer"></div>-->
+		
+		<script>
+			let selectedUnit = 'latest';
+			document.querySelector('#all-unit-holder').style.visibility = "hidden";
+			let loader = null;
+			
+			function callPhp(file, replace){
+				let formData = new FormData();
+				formData.append('file', file, file.name);
+				formData.append('info', 'upload');
+				formData.append('override', replace);
+				
+				fetch('./api.php', {
+					method: 'POST',
+					body: formData
+				})
+				.then(response => response.json())
+				.then(result => {
+					loader.style.display = "none";
+					if(result.status == 2){
+						if(confirm(result.message)){
+							loader.style.display = "flex";
+							callPhp(file, true);
+						}
+					}else{
+						document.querySelector('#all-unit-holder').style.visibility = "hidden";
+						document.querySelector('.alertmsg').innerHTML="File uploaded successfully";
+						document.querySelector('.alertmsg').style.width="250px"
+						document.querySelector('.alertmsg').style.color="green";
+						document.querySelector('.pop-up-success').style.backgroundColorr= "rgb(0,255,0,.05)" ;
+						document.querySelector('#popupsuccess').style.visibility = "visible";
+						document.querySelector('#popup').style.visibility = "hidden";
+						//alert('file uploaded successfull');
+						loadUnit();
+					}
+				})
+				.catch(err=>{
+					console.log(err)
+				loader.style.display = "none";
+				document.querySelector('.alertmsg').innerHTML='Somthing Wrong ! </br>'+err;
+				document.querySelector('.alertmsg').style.width="250px";
+				document.querySelector('.alertmsg').style.color="red";
+				document.querySelector('.pop-up-success').style.backgroundColor= "rgb(255,0,0,.05)" ;
+				document.querySelector('#popupsuccess').style.visibility = "visible";
+				document.querySelector('#popup').style.visibility = "hidden";
+				});
+
+				
+
+				
+			}
+			
+			function loadUnit(){
+				document.querySelector('#frame-holder').style.visibility = "visible";
+				document.querySelector('#all-unit-holder').style.visibility = "hidden";
+				document.querySelector('#frame-holder').src = './client/index.html?units='+selectedUnit;
+			}
+			
+			function loadAllUnit(arr){
+				const parent = document.getElementById("unit-list");
+				while (parent.firstChild) {
+					parent.firstChild.remove();
+				}
+
+				document.querySelector('#all-unit-holder').style.visibility = "visible";
+				for(let j=0; j<arr.length; j++){
+					let el = document.createElement('DIV');
+					el.setAttribute('class', 'unit-row-cls');
+					el.setAttribute('key', arr[j]);
+					el.innerHTML = arr[j];
+					el.addEventListener('click', function(evt){
+						selectedUnit = el.innerHTML;
+						loadUnit();
+					});
+					parent.appendChild(el);
+				}
+			}
+			
+			function initilize(){
+				document.querySelector('#popup').style.visibility = "hidden";
+				document.querySelector('#popupsuccess').style.visibility = "hidden";
+				document.querySelector('#btnClosePp').addEventListener("click", function(evt){
+					document.querySelector('#popup').style.visibility = "hidden";
+				});
+				document.querySelector('#popup').addEventListener("click", function(evt){
+					if(evt.eventPhase == 2){
+						document.querySelector('#popup').style.visibility = "hidden";
+					}
+				});
+				document.querySelector('#btnUpload').addEventListener("click", function(evt){
+					document.querySelector('#popup').style.visibility = "visible";
+				})
+				
+				document.querySelector('#btn-close').addEventListener("click", function(evt){
+					document.querySelector('#all-unit-holder').style.visibility = "hidden";
+				});
+
+				document.querySelector('#btnClosesuccess').addEventListener("click", function(evt){
+					document.querySelector('#popupsuccess').style.visibility = "hidden";
+				});
+				
+				
+				loader = document.querySelector('.loader');
+				document.querySelector("#upload-btn").addEventListener('change', function(evt){
+					let fileList = evt.target.files;
+					if(fileList.length > 0){
+						loader.style.display = "flex";
+						callPhp(fileList[0], false);
+					}
+				});
+				
+				document.querySelector("#search-txt").addEventListener('change', function(evt){
+					selectedUnit = evt.target.value;
+				})
+				
+				document.querySelector("#search-all").addEventListener('click', function(evt){
+					fetch('./api.php?allUnits=all')
+						.then(response => response.json())
+						.then(result=>loadAllUnit(result))
+						.catch(err=>alert('no unit of this name found'))
+				})
+						
+				loadUnit();
+				loader.style.display = "none";
+				document.querySelector("#search-unit").addEventListener('click', loadUnit);
+			}
+		</script>
+    </body>
+</html>
